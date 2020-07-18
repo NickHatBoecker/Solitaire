@@ -1,0 +1,173 @@
+/*
+ * GENERAL
+ */
+
+html, body {
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    padding: 48px;
+    background-color: #3e843e;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+/*
+ * SINGLE CARD
+ */
+
+.card {
+    height: 200px;
+    width: 120px;
+    border: 2px solid #ff718a;
+    display: inline-block;
+    position: relative;
+}
+
+.card__back {
+    background-color: pink;
+}
+
+.card__front {
+    background-color: white;
+    cursor: pointer;
+}
+
+.card__content {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    font-size: 5.3rem;
+    line-height: 1.1;
+}
+
+.card__content--red {
+    color: red;
+}
+
+.card__content--black {
+    color: black;
+}
+
+/*
+ * CARD DECK
+ */
+
+ .card-deck {
+    width: 30%;
+ }
+
+.card-deck .card {
+    vertical-align: bottom;
+}
+
+.card-deck .card:nth-child(2) {
+    margin-left: -96px;
+    cursor: pointer;
+}
+
+.card-deck .card:last-child {
+    margin-left: -96px;
+    cursor: pointer;
+}
+
+.card-deck .card__front {
+    margin-left: 12px !important;
+    transition: margin 700ms ease;
+}
+
+/**
+ * PLAYING FIELD & TARGET ZONE
+ */
+
+.target-zone {
+    flex-grow: 1;
+    margin: 0 -24px;
+}
+
+.playing-field {
+    margin: 72px -24px 0;
+}
+
+.playing-field,
+.target-zone {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.playing-field .slot,
+.target-zone .slot {
+    margin-left:  36px;
+    margin-right: 36px;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    position: relative;
+    min-height: 200px;
+    min-width: 120px;
+}
+
+.playing-field .slot .card-dummy,
+.target-zone .slot .card-dummy {
+    height: 200px;
+    width: 120px;
+    background-color: #dfd;
+    border: 1px solid #333;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.target-zone .slot .card-dummy {
+    font-size: 8rem !important;
+    text-align: center;
+    color: #3333331c;
+}
+
+.target-zone .slot .card-dummy {
+    background-color: #ddfaff;
+}
+
+.playing-field .slot .card,
+.target-zone .slot .card {
+    margin-top: -170px;
+}
+
+.playing-field .slot div:nth-child(2),
+.target-zone .slot div:nth-child(2) {
+    margin-top: 0 !important;
+}
+
+.playing-field .slot .card:not(:last-child) .card__content,
+.target-zone .slot .card:not(:last-child) .card__content {
+    justify-content: center;
+    flex-direction: column;
+    align-items: flex-end;
+    font-size: 1.2rem;
+    margin-top: 3px;
+    margin-right: 6px;
+}
+
+/**
+ * UTILS
+ */
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Old versions of Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+}
+
+.flex {
+    display: flex;
+    flex-wrap: wrap;
+}
