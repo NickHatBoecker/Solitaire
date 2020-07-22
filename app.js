@@ -3,23 +3,30 @@ const SPADES = '♠';
 const HEARTS = '♥';
 const DIAMONDS = '♦';
 
-const ACE = 'A';
 const COLORS = [CLUBS, SPADES, HEARTS, DIAMONDS];
 const NUMBERS = ['A', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-const CARDS = [];
-const CARDS_IN_GAME = [];
-const CARDS_IN_TARGET_ZONE = [];
+const CARDS = []; // All available cards
+const CARDS_IN_GAME = []; // All cards in the current game
+const CARDS_IN_TARGET_ZONE = []; // All cards in the target zones
 
 let SECOND_CARD_LISTENER = null;
 
-(function() {
+(function () {
     generateCardDeck();
-    initNewCard();
+    updateCardDeck();
     initSecondCard();
-    initDropzones();
+    initDropzoneEvents();
 })();
 
-function initDropzones () {
+function generateCardDeck () {
+    NUMBERS.forEach(function (number) {
+        COLORS.forEach(function (color) {
+            CARDS.push(color + number);
+        });
+    });
+}
+
+function initDropzoneEvents () {
     let dropzones = document.querySelectorAll('.playing-field .slot');
     dropzones.forEach(function (zone) {
         zone.addEventListener('dragover', onDragOver);
@@ -33,7 +40,104 @@ function initDropzones () {
     });
 }
 
-function showRandomCard (card) {
+function endGame () {
+    if (document.querySelector('.card-deck')) {
+        document.querySelector('.card-deck').remove();
+    }
+    alert('YOU WON!');
+    location.reload();
+}
+
+function isLastCardOfSlot (draggableElement) {
+    const slot = draggableElement.parentElement;
+    const lastCard = slot.querySelector('.card:last-child');
+
+    return draggableElement === lastCard;
+}
+
+function cardIsValid (newCard, lastCard, zoneColor) {
+    if (!lastCard && !zoneColor) {
+        // Drop any card on playfield if zone is empty
+        return true;
+    }
+
+    if (!lastCard && zoneColor && zoneColor === newCard.dataset.color && isAce(newCard.dataset.number)) {
+        // Drop any ace in empty colored target zone
+        return true;
+    }
+
+    if (!lastCard && zoneColor && zoneColor !== newCard.dataset.color) {
+        // Tried to drop an ace of another color
+        return false;
+    }
+
+    const newCardIndex = NUMBERS.findIndex(function (x) { return x === newCard.dataset.number; });
+    const lastCardIndex = NUMBERS.findIndex(function (x) { return x === lastCard.dataset.number; });
+
+    if (lastCard && zoneColor && zoneColor === newCard.dataset.color && (newCardIndex - 1) === lastCardIndex) {
+        // Drop the next same colored card in target zone
+        return true;
+    }
+
+    if (!zoneColor && ((isRed(lastCard.dataset.color) && isRed(newCard.dataset.color)) || (!isRed(lastCard.dataset.color) && !isRed(newCard.dataset.color)))) {
+        // Drop any card on playfield if it has not the same color as the last card
+        return false;
+    }
+
+    if ((newCardIndex + 1) !== lastCardIndex) {
+        return false;
+    }
+
+    return true;
+}
+
+function updateCardDeck () {
+    /**
+     * Add a new covered card to the deck after the
+     * open card was placed.
+     */
+    const cardDeck = document.querySelector('.card-deck');
+    const bareCard = document.querySelector('.card-deck .card:first-child');
+    const clone = bareCard.cloneNode(true);
+
+    cardDeck.insertBefore(clone, bareCard);
+
+    /**
+     * Init new cards
+     */
+    const card = getLastCard();
+
+    card.setAttribute('id', 'new-card');
+    card.addEventListener('click', drawCard);
+
+    getSecondCard().removeEventListener('click', SECOND_CARD_LISTENER);
+}
+
+function initSecondCard () {
+    const card = getSecondCard();
+
+    SECOND_CARD_LISTENER = card.addEventListener('click', function () {
+        document.querySelector('.card-deck .card:last-child').remove();
+        updateCardDeck();
+        drawCard();
+        initSecondCard();
+    });
+}
+
+function drawCard () {
+    const card = getNewCard();
+    if (!card) {
+        return;
+    }
+
+    if (card.getAttribute('draggable')) {
+        return;
+    }
+
+    card.classList.remove("card__back");
+    card.classList.add("card__front");
+    card.setAttribute('draggable', true);
+
     const randomCard = random(CARDS.filter(function (x) { return !CARDS_IN_GAME.includes(x); }));
     const color = randomCard.slice(0, 1);
     const number = randomCard.slice(1);
@@ -49,27 +153,19 @@ function showRandomCard (card) {
     } else {
         content.classList.add('card__content--black');
     }
+
+    card.addEventListener('dragstart', onDragStart);
 }
 
-function getCustomColor () {
-    const colors = [CLUBS, SPADES, HEARTS, DIAMONDS];
-
-    return random(colors);
-}
-
-function getCustomNumber () {
-    return random(NUMBERS);
-}
-
-function random (list) {
-    return list[Math.floor(Math.random() * list.length)]
-}
+/**
+ * EVENT LISTENER
+ */
 
 function onDragStart (event) {
     event.dataTransfer.setData('text/plain', event.currentTarget.getAttribute('id'));
 }
 
-function onDragOver(event) {
+function onDragOver (event) {
     event.preventDefault();
 }
 
@@ -126,8 +222,7 @@ function onDrop (event, dropzone) {
     }
 
     if (!CARDS_IN_GAME.includes(id)) {
-        addNewBareCard();
-        initNewCard();
+        updateCardDeck();
         initSecondCard();
     
         CARDS_IN_GAME.push(id);
@@ -139,88 +234,20 @@ function onDrop (event, dropzone) {
     }
 }
 
-function endGame () {
-    if (document.querySelector('.card-deck')) {
-        document.querySelector('.card-deck').remove();
-    }
-    alert('YOU WON!');
-    location.reload();
+/**
+ * HELPER FUNCTIONS
+ */
+
+function getCustomColor () {
+    return random(COLORS);
 }
 
-function isLastCardOfSlot(draggableElement) {
-    const slot = draggableElement.parentElement;
-    const lastCard = slot.querySelector('.card:last-child');
-
-    return draggableElement === lastCard;
+function getCustomNumber () {
+    return random(NUMBERS);
 }
 
-function cardIsValid(newCard, lastCard, zoneColor) {
-    if (!lastCard && !zoneColor) {
-        // Drop any card on playfield if zone is empty
-        return true;
-    }
-
-    if (!lastCard && zoneColor && zoneColor === newCard.dataset.color && newCard.dataset.number === ACE) {
-        // Drop any ace in empty colored target zone
-        return true;
-    }
-
-    if (!lastCard && zoneColor && zoneColor !== newCard.dataset.color) {
-        // Tried to drop an ace of another color
-        return false;
-    }
-
-    const newCardIndex = NUMBERS.findIndex(function (x) { return x === newCard.dataset.number; });
-    const lastCardIndex = NUMBERS.findIndex(function (x) { return x === lastCard.dataset.number; });
-
-    if (lastCard && zoneColor && zoneColor === newCard.dataset.color && (newCardIndex - 1) === lastCardIndex) {
-        // Drop the next same colored card in target zone
-        return true;
-    }
-
-    if (!zoneColor && ((isRed(lastCard.dataset.color) && isRed(newCard.dataset.color)) || (!isRed(lastCard.dataset.color) && !isRed(newCard.dataset.color)))) {
-        // Drop any card on playfield if it has not the same color as the last card
-        return false;
-    }
-
-    if ((newCardIndex + 1) !== lastCardIndex) {
-        return false;
-    }
-
-    return true;
-}
-
-function isRed(color) {
-    return [HEARTS, DIAMONDS].includes(color)
-}
-
-function addNewBareCard () {
-    const cardDeck = document.querySelector('.card-deck');
-    const bareCard = document.querySelector('.card-deck .card:first-child');
-    const clone = bareCard.cloneNode(true);
-
-    cardDeck.insertBefore(clone, bareCard);
-}
-
-function initNewCard () {
-    const newCard = getLastCard();
-
-    newCard.setAttribute('id', 'new-card');
-    newCard.addEventListener('click', revealCard);
-
-    getSecondCard().removeEventListener('click', SECOND_CARD_LISTENER);
-}
-
-function initSecondCard () {
-    const card = getSecondCard();
-
-    SECOND_CARD_LISTENER = card.addEventListener('click', function () {
-        document.querySelector('.card-deck .card:last-child').remove();
-        addNewBareCard();
-        initNewCard();
-        revealCard();
-        initSecondCard();
-    });
+function random (list) {
+    return list[Math.floor(Math.random() * list.length)];
 }
 
 function getNewCard () {
@@ -235,29 +262,10 @@ function getLastCard () {
     return document.querySelector('.card-deck .card:last-child');
 }
 
-function revealCard () {
-    const card = getNewCard();
-    if (!card) {
-        return;
-    }
-
-    if (card.getAttribute('draggable')) {
-        return;
-    }
-
-    card.classList.remove("card__back");
-    card.classList.add("card__front");
-    card.setAttribute('draggable', true);
-
-    showRandomCard(card);
-
-    card.addEventListener('dragstart', onDragStart);
+function isRed (color) {
+    return [HEARTS, DIAMONDS].includes(color);
 }
 
-function generateCardDeck () {
-    NUMBERS.forEach(function (number) {
-        COLORS.forEach(function (color) {
-            CARDS.push(color + number);
-        });
-    });
+function isAce (card) {
+    return card === 'A';
 }
