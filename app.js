@@ -71,8 +71,13 @@ function cardIsValid (newCard, lastCard, zoneColor) {
         return false;
     }
 
+
     const newCardIndex = NUMBERS.findIndex(function (x) { return x === newCard.dataset.number; });
-    const lastCardIndex = NUMBERS.findIndex(function (x) { return x === lastCard.dataset.number; });
+
+    let lastCardIndex = null;
+    if (lastCard) {
+        lastCardIndex = NUMBERS.findIndex(function (x) { return x === lastCard.dataset.number; });
+    }
 
     if (lastCard && zoneColor && zoneColor === newCard.dataset.color && (newCardIndex - 1) === lastCardIndex) {
         // Drop the next same colored card in target zone
